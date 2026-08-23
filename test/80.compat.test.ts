@@ -32,6 +32,8 @@ describe(TITLE, () => {
 
     it("@aws-crypto/sha256-js", testFor(new A.AwsCrypto()))
 
+    it("hash-wasm", testFor(new A.HashWasm()))
+
     // The async W3C interface sits outside the sync testFor() shape.
     it("crypto.subtle.digest()", async (t: TestContext) => {
         const adapter = new A.SubtleCrypto()
@@ -42,9 +44,12 @@ describe(TITLE, () => {
 })
 
 function testFor(adapter: A.Adapter) {
-    return (t: TestContext): void => {
+    return async (t: TestContext): Promise<void> => {
         // Nothing to check for an adapter that takes neither shape.
         if (adapter.noString && adapter.noBinary) return t.skip()
+
+        // An adapter that loads WebAssembly only becomes usable here.
+        await adapter.setup()
 
         if (!adapter.noString) {
             {

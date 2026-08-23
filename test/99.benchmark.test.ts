@@ -42,6 +42,7 @@ describe(`REPEAT=${REPEAT} ${TITLE}`, () => {
         it("fast-sha256", testString(new A.FastSha256()))
         it("js-sha256", testString(new A.JsSha256()))
         it("@aws-crypto/sha256-js", testString(new A.AwsCrypto()))
+        it("hash-wasm", testString(new A.HashWasm()))
     })
 
     describe("makeBinaryBench", () => {
@@ -56,6 +57,7 @@ describe(`REPEAT=${REPEAT} ${TITLE}`, () => {
         it("fast-sha256", testBinary(new A.FastSha256()))
         it("js-sha256", testBinary(new A.JsSha256()))
         it("@aws-crypto/sha256-js", testBinary(new A.AwsCrypto()))
+        it("hash-wasm", testBinary(new A.HashWasm()))
     })
 
     describe("makeBinaryBenchAsync", () => {
@@ -63,7 +65,8 @@ describe(`REPEAT=${REPEAT} ${TITLE}`, () => {
     })
 
     function testString(adapter: A.Adapter) {
-        return (t: TestContext): void => {
+        return async (t: TestContext): Promise<void> => {
+            await adapter.setup()
             const bench = adapter.makeStringBench(stringPairs)
             if (!bench) return t.skip()
             bench(REPEAT)
@@ -71,7 +74,8 @@ describe(`REPEAT=${REPEAT} ${TITLE}`, () => {
     }
 
     function testBinary(adapter: A.Adapter) {
-        return (t: TestContext): void => {
+        return async (t: TestContext): Promise<void> => {
+            await adapter.setup()
             const bench = adapter.makeBinaryBench(binaryPairs)
             if (!bench) return t.skip()
             bench(REPEAT)
@@ -80,6 +84,7 @@ describe(`REPEAT=${REPEAT} ${TITLE}`, () => {
 
     function testAsync(adapter: A.Adapter) {
         return async (t: TestContext): Promise<void> => {
+            await adapter.setup()
             const bench = adapter.makeBinaryBenchAsync(binaryPairs)
             if (!bench) return t.skip()
             await bench(REPEAT)

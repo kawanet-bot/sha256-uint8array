@@ -121,6 +121,7 @@ async function main(): Promise<void> {
         ["fast-sha256", new A.FastSha256()],
         ["js-sha256", new A.JsSha256()],
         ["@aws-crypto/sha256-js", new A.AwsCrypto()],
+        ["hash-wasm", new A.HashWasm()],
         ["crypto.subtle.digest()", new A.SubtleCrypto()],
     ]
 
@@ -137,6 +138,9 @@ async function main(): Promise<void> {
     // the sync implementation when it has one, otherwise the async one
     // in the same rotation, and a cell-less adapter is simply skipped.
     const cells: Cell[] = []
+    // Loading a WebAssembly module is a one-time cost of importing the
+    // library rather than part of a digest, so it happens up front.
+    for (const [, adapter] of picked) await adapter.setup()
     for (const [name, adapter] of picked) {
         const s = adapter.makeStringBench(stringPairs)
         if (s) cells.push({name, input: "string", impl: "sync", fn: s, opsPerRepeat: stringPairs.length, repeat: 0, times: []})

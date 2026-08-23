@@ -7,6 +7,7 @@ import {sha256 as noble} from "@noble/hashes/sha2.js"
 import {bytesToHex} from "@noble/hashes/utils.js"
 import cryptoJs from "crypto-js"
 import fastSha256 from "fast-sha256"
+import {createSHA256, type IHasher} from "hash-wasm"
 import hashJs from "hash.js/lib/hash/sha/256.js"
 import {sha256 as jsSha256} from "js-sha256"
 import jsSha from "jssha/dist/sha256"
@@ -34,6 +35,12 @@ export abstract class Adapter {
     declare noDataView?: boolean;
     declare noAsync?: boolean;
     declare noBench?: boolean;
+
+    // Some adapters, such as the one loading WebAssembly, need an
+    // asynchronous step before the first hash(). The runner and the
+    // suites await this before measuring; the default does nothing.
+    async setup(): Promise<void> {
+    }
 
     hash(_data: string | Uint8Array | ArrayBufferView): string {
         throw new Error("hash() not supported")
@@ -246,6 +253,35 @@ export class JsSha256 extends Adapter {
 
     hash(data: string | Uint8Array): string {
         return this.sha256(data)
+    }
+}
+
+/**
+ * https://www.npmjs.com/package/hash-wasm
+ *
+ * Note: it hashes in WebAssembly, so it stands beside the JavaScript
+ * implementations as a reference rather than a peer. Only loading the
+ * module is asynchronous; once resolved, init/update/digest are
+ * synchronous, so setup() builds the hasher once and the same sync
+ * closures as every other adapter measure the hashing alone rather
+ * than a Promise round trip.
+ */
+
+export class HashWasm extends Adapter {
+    private createSHA256 = createSHA256;
+    private hasher: IHasher | null = null;
+    // Its declared input type covers strings and the unsigned typed
+    // arrays only, so the wider views stay out of the comparison.
+    noDataView = true;
+
+    override async setup(): Promise<void> {
+        this.hasher ??= await this.createSHA256()
+    }
+
+    hash(data: string | Uint8Array): string {
+        const {hasher} = this
+        if (!hasher) throw new Error("hash-wasm: setup() not awaited")
+        return hasher.init().update(data).digest("hex")
     }
 }
 

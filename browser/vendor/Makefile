@@ -4,6 +4,7 @@ ALL := \
 	lib/@noble/hashes/utils.js \
 	lib/crypto-js/index.js \
 	lib/fast-sha256/sha256.js \
+	lib/hash-wasm/sha256.js \
 	lib/hash.js/lib/hash/sha/256.js \
 	lib/js-sha256/build/sha256.js \
 	lib/jssha/dist/sha256.js \
@@ -24,6 +25,13 @@ lib/%.js: ../../node_modules/%.js
 	-p 'node-resolve={browser:true,preferBuiltins:false}' \
 	-p 'commonjs' \
 	--format iife $< -o $@
+
+# Its per-algorithm UMD build is a standalone file that already carries
+# the WebAssembly payload inline and is already minified, so re-wrapping
+# it through rollup would gain nothing; copy it as it ships.
+lib/hash-wasm/sha256.js: ../../node_modules/hash-wasm/dist/sha256.umd.min.js
+	@mkdir -p $(dir $@)
+	cp $< $@
 
 lib/%.min.js: lib/%.js
 	../../node_modules/.bin/terser $< -o $@ -c -m

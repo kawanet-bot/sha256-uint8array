@@ -30,6 +30,7 @@ const rollupConfig: RollupOptions = {
         "@noble/hashes/utils.js",
         "crypto-js",
         "fast-sha256",
+        "hash-wasm",
         "hash.js/lib/hash/sha/256.js",
         "js-sha256",
         "jssha/dist/sha256",
@@ -46,6 +47,9 @@ const rollupConfig: RollupOptions = {
             "@noble/hashes/utils.js": "noble_hashes_utils",
             "crypto-js": "crypto_js_index",
             "fast-sha256": "fast_sha256_sha256",
+            // The name the published UMD build assigns itself, so unlike
+            // the others this one is not derived from the file path.
+            "hash-wasm": "hashwasm",
             "hash.js/lib/hash/sha/256.js": "hash_js_lib_hash_sha_256",
             "js-sha256": "js_sha256_build_sha256",
             "jssha/dist/sha256": "jssha_dist_sha256",

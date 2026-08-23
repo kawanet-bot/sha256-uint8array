@@ -149,17 +149,37 @@ export class Hash {
         const {_byte, _word} = this
         const length = text.length
         let surrogate = this._sp
+        let size = this._size
 
         for (let offset = 0; offset < length; ) {
-            const start = this._size % N_inputBytes
+            const start = size & (N_inputBytes - 1)
             let index = start
 
             while (offset < length && index < N_inputBytes) {
-                let code = text.charCodeAt(offset++) | 0
+                let code = text.charCodeAt(offset) | 0
                 if (code < 0x80) {
-                    // ASCII characters
+                    // Copy common ASCII runs four-wide without consuming
+                    // the first non-ASCII code unit needed by the scalar path.
                     _byte[index++] = code
-                } else if (code < 0x800) {
+                    offset++
+                    while (offset + 4 <= length && index + 4 <= N_inputBytes) {
+                        const c0 = text.charCodeAt(offset) | 0
+                        const c1 = text.charCodeAt(offset + 1) | 0
+                        const c2 = text.charCodeAt(offset + 2) | 0
+                        const c3 = text.charCodeAt(offset + 3) | 0
+                        if ((c0 | c1 | c2 | c3) & 0xFF80) break
+                        _byte[index] = c0
+                        _byte[index + 1] = c1
+                        _byte[index + 2] = c2
+                        _byte[index + 3] = c3
+                        offset += 4
+                        index += 4
+                    }
+                    continue
+                }
+
+                offset++
+                if (code < 0x800) {
                     // 2 bytes
                     _byte[index++] = 0xC0 | (code >>> 6)
                     _byte[index++] = 0x80 | (code & 0x3F)
@@ -186,9 +206,10 @@ export class Hash {
                 _word[0] = _word[N_inputWords]
             }
 
-            this._size += index - start
+            size += index - start
         }
 
+        this._size = size
         this._sp = surrogate
         return this
     }

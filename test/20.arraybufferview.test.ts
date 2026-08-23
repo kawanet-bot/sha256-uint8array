@@ -20,6 +20,19 @@ describe(TITLE, () => {
         assert.equal(createHash().update(data).digest("hex"), expected)
     })
 
+    it("Int8Array signed bytes", () => {
+        const data = new Int8Array([-128, -1, 0, 127])
+        const expected = "695fa9d95b35a0430e8401440e3ca896bfdaedfbce2b3a16c5f68c0bd67a48b2"
+        assert.equal(createHash().update(data).digest("hex"), expected)
+    })
+
+    it("Uint8Array offset 1", () => {
+        const data = new Uint8Array(stringToArrayBuffer("?ABCDEFGH"), 1)
+        assert.equal(data.byteLength, 8)
+        assert.equal(data.byteOffset, 1)
+        assert.equal(createHash().update(data).digest("hex"), expected)
+    })
+
     it("Uint16Array", () => {
         const data = new Uint16Array(buffer)
         assert.equal(data.BYTES_PER_ELEMENT, 2)

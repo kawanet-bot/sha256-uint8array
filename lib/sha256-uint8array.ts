@@ -132,6 +132,19 @@ export class Hash {
             let index = start
 
             while (offset < length && index < N_inputBytes) {
+                if (!(index & 3)) {
+                    while (offset + 4 <= length && index + 4 <= N_inputBytes) {
+                        _word[index >> 2] = pack32(
+                            data[offset] & 0xFF,
+                            data[offset + 1] & 0xFF,
+                            data[offset + 2] & 0xFF,
+                            data[offset + 3] & 0xFF,
+                        )
+                        offset += 4
+                        index += 4
+                    }
+                    if (offset >= length || index >= N_inputBytes) break
+                }
                 _byte[index++] = data[offset++]
             }
 
